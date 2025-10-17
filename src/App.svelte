@@ -1,4 +1,6 @@
 <script>
+    import NewUser from "./lib/NewUser.svelte";
+
     let userid = null;
     let user = null;
     let username = "";
@@ -39,25 +41,6 @@
             localStorage.removeItem("userid");
         });
     }
-    async function createUser(inData){
-        await fetch("http://localhost:8080/api/users", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(inData)
-            })
-            .then(response => {
-                return response.json();
-            })
-            .then(data => {
-                localStorage.setItem("userid", data.id);
-                location.reload();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    }
 
     async function getAllPolls(){
         await fetch("http://localhost:8080/api/polls")
@@ -66,12 +49,11 @@
         })
         .then(data =>  {
             polls = data;
-            console.log(polls);
         })
         .catch(error => console.log(error))
     }
 
-    async function createPoll(inData){
+    async function createPoll(inData, opt){
         await fetch("http://localhost:8080/api/polls", {
                 method: 'POST',
                 headers: {
@@ -84,14 +66,47 @@
             })
             .then(data => {
                 data;
-                //location.reload();
+                insertOptions({
+                    id: data.id + "",
+                    options: opt
+                })
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+    async function insertOptions(inData) {
+        await fetch("http://localhost:8080/api/polls/insert", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(inData)
+        })
+        .then(res => res.json()).then(data => data).catch(e => console.log(e));
+    }
+
+    async function vote(inData) {
+        await fetch("http://localhost:8080/api/votes", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(inData)
+            })
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
+                data;
             })
             .catch(error => {
                 console.error('Error:', error);
             });
     }
 
-    //Login and Register:
+    //Login:
 
     function Login(){
         let name = document.getElementById("name").value;
@@ -112,7 +127,7 @@
     }
 
     function LoggOut(){
-        localStorage.removeItem("userid");
+        localStorage.setItem("userid", "null");
         location.reload();
     }
 
@@ -120,7 +135,7 @@
         let stored = localStorage.getItem("userid");
         
         if (stored !== "null" || stored !== null){
-            if ( stored == "0"){
+            if ( stored === "0"){
                 username = "Anon";
             } else {
                 userid = stored;
@@ -134,26 +149,24 @@
         nyBruker = !nyBruker;
     }
 
-    function RegisterUser(){
-        let name = document.getElementById("name").value;
-        let email = document.getElementById("email").value;
-        let password = document.getElementById("password").value;
-
-        let inData = {
-            username: name,
-            email: email,
-            password: password
-        }
-        createUser(inData);
-    }
-
     //Polls:
 
     function RegisterPoll(){
-        let caption = document.getElementById("captioninp").value;
-        let options = document.getElementsByClassName("optioninp");
+        let question = document.getElementById("captioninp").value;
+        let optionsinp = document.getElementsByClassName("optioninp");
+        let opt = "";
 
+        for (let i = 0; i < optionsinp.length; i++){
+            let tmp = optionsinp[i].value;
+            if (tmp !== null){
+                opt += tmp + ",,";
+            }
+        }
 
+        createPoll({
+            question: question,
+            userid: userid
+        }, opt);
     }
 
     function AddPollOption(){
@@ -161,19 +174,57 @@
         box.insertAdjacentHTML("beforeend", "Option: <input type=Text class=optioninp /> <br>");
     }
 
+    // Vote:
+
+    function placeVote(option){
+        vote({
+            id: userid,
+            voteoption: option.id
+        })
+        location.reload();
+    }
+
 </script>
 
 <main>
 
     {#if nyBruker}
-        <h1>Registerer</h1>
-        <input type="text" id="name" placeholder="name"> <br>
-        <input type="text" id="email" placeholder="email"> <br>
-        <input type="password" id="password" placeholder="password"> <br>
-        <button type="button" onclick={RegisterUser} >Registerer</button>
+        <NewUser />
     {/if}
 
-    {#if (userid === null || userid === "null") && !nyBruker}
+    {#if (userid !== "null") }
+        
+        <h1> Hello {username}! 
+            <button type="button" onclick={LoggOut} >Logg out</button>
+        </h1>
+
+        {#if (username !== "Anon")}
+            <div class="box">
+                <div>Caption: <input type="text" id="captioninp"/> </div>
+                <div id="newpollbox">
+                    Option: <input type="text" class="optioninp" /> <br>
+                </div>
+                <button type="button" onclick={AddPollOption} >Add Option</button>
+                <button type="button" onclick={RegisterPoll} >Create Poll</button>
+            </div>
+        {/if}
+
+            {#each polls as poll }
+                <div class="box" >
+                    <div>Poll {poll.id} votes: {poll.votes.length}</div>
+                    <h2>{poll.question}</h2>
+
+                    {#each poll.voteOptions as option }
+                        <div>
+                            {option.caption} 
+                            <button type="button" onclick={() => placeVote(option)} > vote </button>
+                        </div>
+                    {/each}
+                </div>
+            {/each}
+    {/if}
+
+    {#if (userid === "null") && !nyBruker}
         <h1>Login</h1>
 
         <input type="text" id="name" placeholder="name"> <br>
@@ -181,30 +232,5 @@
 
         <button type="button" onclick={Login} >Login</button>
         <button type="button" onclick={toggleNyBruker} >Registerer ny</button>
-    {/if}
-
-    {#if (userid !== null && userid !== "null") }
-        
-        <h1> Hello {username}! 
-            <button type="button" onclick={LoggOut} >Logg out</button>
-        </h1>
-
-        <div class="box">
-            <div>Caption: <input type="text" id="captioninp"/> </div>
-            <div id="newpollbox">
-                Option: <input type="text" class="optioninp" /> <br>
-            </div>
-            <button type="button" onclick={AddPollOption} >Add Option</button>
-            <button type="button" onclick={RegisterPoll} >Create Poll</button>
-        </div>
-
-        <div class="box" >
-
-            <div>Poll##</div>
-            <h2>Name of Poll</h2>
-            <div>option1 <button>Vote</button> .. Votes </div>
-            <div>option1 <button>Vote</button> .. Votes </div>
-
-        </div>
     {/if}
 </main>
