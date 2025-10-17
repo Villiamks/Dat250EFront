@@ -184,6 +184,17 @@
         location.reload();
     }
 
+    function findNRVotesinPoll(poll, option){
+        let allvotes = poll.votes;
+        let y = 0;
+        for (let i = 0; i < allvotes.length; i++){
+            let voteOpt = allvotes[i].voteoption;
+            if (voteOpt.id = option.id){
+                y = y+1;
+            }
+        }
+    }
+
 </script>
 
 <main>
@@ -215,10 +226,12 @@
                     <h2>{poll.question}</h2>
 
                     {#each poll.voteOptions as option }
+
                         <div>
                             {option.caption} 
                             <button type="button" onclick={() => placeVote(option)} > vote </button>
-                        </div>
+                            {option.votes.length} votes
+                        </div> 
                     {/each}
                 </div>
             {/each}
