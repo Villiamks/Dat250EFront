@@ -141,7 +141,7 @@
                 userid = stored;
             }
         }else {
-            userid = null;
+            userid = "null";
         }
     }
 
@@ -184,17 +184,6 @@
         location.reload();
     }
 
-    function findNRVotesinPoll(poll, option){
-        let allvotes = poll.votes;
-        let y = 0;
-        for (let i = 0; i < allvotes.length; i++){
-            let voteOpt = allvotes[i].voteoption;
-            if (voteOpt.id = option.id){
-                y = y+1;
-            }
-        }
-    }
-
 </script>
 
 <main>
@@ -203,7 +192,7 @@
         <NewUser />
     {/if}
 
-    {#if (userid !== "null") }
+    {#if (userid !== "null") && (username !== "") }
         
         <h1> Hello {username}! 
             <button type="button" onclick={LoggOut} >Logg out</button>
@@ -237,7 +226,7 @@
             {/each}
     {/if}
 
-    {#if (userid === "null") && !nyBruker}
+    {#if ((userid === "null") || (username === "") ) && (!nyBruker) }
         <h1>Login</h1>
 
         <input type="text" id="name" placeholder="name"> <br>
