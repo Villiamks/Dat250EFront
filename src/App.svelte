@@ -12,7 +12,7 @@
     getAllPolls();
     CheckLoggedinn();
 
-    if ( userid !== 0 && userid !== null && userid !== "null"){
+    if ( userid !== "a" && userid !== null && userid !== "null"){
         getUserById(userid);
     }
 
@@ -29,7 +29,7 @@
         .catch(error => console.log(error))
     }
     async function getUserById(id){
-        await fetch("http://localhost:8080/api/users/find?id=" + userid)
+        await fetch("http://localhost:8080/api/users/find?id=" + id)
         .then(res => {
             return res.json();
         })
@@ -45,10 +45,11 @@
     async function getAllPolls(){
         await fetch("http://localhost:8080/api/polls")
         .then(res => {
-            return res.json()
+            return res.json();
         })
         .then(data =>  {
             polls = data;
+            console.log(polls);
         })
         .catch(error => console.log(error))
     }
@@ -112,10 +113,10 @@
         let name = document.getElementById("name").value;
         let password = document.getElementById("password").value;
 
-        if (name == null || name == "" ){
-            userid = 0;
+        if (name === null || name === "" ){
+            userid = "a";
         } else {
-            for (let i = 0; i <= users.length; i++){
+            for (let i = 0; i < users.length; i++){
                 let tmp = users[i];
                 if (tmp != null && tmp.username == name && tmp.password == password){
                     userid = tmp.id;
@@ -133,9 +134,9 @@
 
     function CheckLoggedinn(){
         let stored = localStorage.getItem("userid");
-        
+
         if (stored !== "null" || stored !== null){
-            if ( stored === "0"){
+            if ( stored === "a"){
                 username = "Anon";
             } else {
                 userid = stored;
@@ -209,21 +210,21 @@
             </div>
         {/if}
 
-            {#each polls as poll }
-                <div class="box" >
-                    <div>Poll {poll.id} votes: {poll.votes.length}</div>
-                    <h2>{poll.question}</h2>
+        {#each polls as poll }
+            <div class="box" >
+                <div>Poll {poll.id}</div>
+                <h2>{poll.question}</h2>
 
-                    {#each poll.voteOptions as option }
+                {console.log(poll.options[0])}
 
-                        <div>
-                            {option.caption} 
-                            <button type="button" onclick={() => placeVote(option)} > vote </button>
-                            {option.votes.length} votes
-                        </div> 
-                    {/each}
-                </div>
-            {/each}
+                {#each poll.options as option }
+                    <div>
+                        {option.caption} 
+                        <button type="button" onclick={() => placeVote(option)} > vote </button>
+                    </div>
+                {/each}
+            </div>
+        {/each}
     {/if}
 
     {#if ((userid === "null") || (username === "") ) && (!nyBruker) }
